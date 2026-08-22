@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="si">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quick Checkout - Cash on Delivery</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f7f6; margin: 0; padding: 20px; }
+        .checkout-card { max-width: 450px; margin: auto; background: #ffffff; border-radius: 12px; padding: 25px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        h2 { text-align: center; color: #333; margin-bottom: 5px; }
+        p.sub { text-align: center; color: #27ae60; font-weight: bold; margin-top: 0; }
+        .form-group { margin-bottom: 15px; }
+        label { display: block; font-size: 14px; font-weight: 600; color: #444; margin-bottom: 5px; }
+        input, select { width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; font-size: 14px; }
+        input:focus, select:focus { border-color: #27ae60; outline: none; }
+        .btn-submit { width: 100%; background: #27ae60; color: #fff; padding: 14px; border: none; border-radius: 6px; font-size: 16px; font-weight: bold; cursor: pointer; transition: 0.3s; }
+        .btn-submit:hover { background: #219150; }
+        #msg { text-align: center; margin-top: 15px; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+<div class="checkout-card">
+    <h2>Order Form එක පුරවන්න</h2>
+    <p class="sub">🚚 Cash on Delivery (භාණ්ඩ ලැබුණු පසු මුදල් ගෙවන්න)</p>
+    
+    <form id="orderForm">
+        <div class="form-group">
+            <label>ඔබේ නම (Customer Name) *</label>
+            <input type="text" name="customerName" placeholder="Name" required>
+        </div>
+
+        <div class="form-group">
+            <label>ලිපිනය (Address) *</label>
+            <input type="text" name="address" placeholder="House No, Street Name" required>
+        </div>
+
+        <div class="form-group">
+            <label>නගරය (City) *</label>
+            <input type="text" name="city" placeholder="City" required>
+        </div>
+
+        <div class="form-group">
+            <label>දිස්ත්‍රික්කය (District)</label>
+            <input type="text" name="district" placeholder="District">
+        </div>
+
+        <div class="form-group">
+            <label>දුරකථන අංකය (Phone 1) *</label>
+            <input type="tel" name="phone1" placeholder="07XXXXXXXX" required>
+        </div>
+
+        <div class="form-group">
+            <label>දෙවන දුරකථන අංකය (Phone 2 - Optional)</label>
+            <input type="tel" name="phone2" placeholder="07XXXXXXXX">
+        </div>
+
+        <!-- Product Details (Hidden or Fixed) -->
+        <input type="hidden" name="productName" value="Mini Portable Fan">
+        <input type="hidden" name="qty" value="1">
+        <input type="hidden" name="saleAmount" value="2850">
+
+        <button type="submit" class="btn-submit" id="submitBtn">ORDER NOW - Rs. 2,850</button>
+    </form>
+    
+    <div id="msg"></div>
+</div>
+
+<script>
+    const scriptURL = 'https://script.google.com/macros/s/AKfycbyVnuI1o4galwTSdetYBlgXsIjztQs_XakqQrWtcZuIx-no2ypUSwELhTLVbuNrOAkf/exec';
+    const form = document.getElementById('orderForm');
+    const msg = document.getElementById('msg');
+    const submitBtn = document.getElementById('submitBtn');
+
+    form.addEventListener('submit', e => {
+        e.preventDefault();
+        submitBtn.disabled = true;
+        submitBtn.innerText = 'Processing Order...';
+        msg.style.color = 'black';
+        msg.innerText = 'ඔබේ Order එක යවමින් පවතී...';
+
+        const formData = new FormData(form);
+        const data = Object.fromEntries(formData.entries());
+
+        fetch(scriptURL, {
+            method: 'POST',
+            mode: 'no-cors',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        })
+        .then(() => {
+            msg.style.color = 'green';
+            msg.innerText = 'SUCCESS! ඔබේ Order එක සාර්ථකව භාරගන්නා ලදී. ඉක්මනින්ම ඔබට කතා කරන්නෙමු.';
+            form.reset();
+            submitBtn.disabled = false;
+            submitBtn.innerText = 'ORDER NOW - Rs. 2,850';
+        })
+        .catch(error => {
+            msg.style.color = 'red';
+            msg.innerText = 'Error! නැවත උත්සාහ කරන්න.';
+            submitBtn.disabled = false;
+            submitBtn.innerText = 'ORDER NOW - Rs. 2,850';
+        });
+    });
+</script>
+
+</body>
+</html>
