@@ -3,107 +3,192 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mini Portable Fan - Special Offer</title>
+    <title>Mini Store</title>
     <style>
-        body { font-family: 'Segoe UI', Arial, sans-serif; background-color: #f4f7f6; margin: 0; padding: 15px; }
-        .container { max-width: 480px; margin: auto; background: #ffffff; border-radius: 12px; padding: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); }
-        .product-img { width: 100%; border-radius: 8px; object-fit: cover; }
-        .title { font-size: 22px; font-weight: bold; color: #2c3e50; margin: 12px 0 5px 0; text-align: center; }
-        .price-tag { text-align: center; margin-bottom: 15px; }
-        .old-price { text-decoration: line-through; color: #e74c3c; font-size: 16px; margin-right: 8px; }
-        .new-price { color: #27ae60; font-size: 24px; font-weight: bold; }
-        .badge { display: inline-block; background: #ffeaa7; color: #d63031; font-weight: bold; padding: 4px 12px; border-radius: 20px; font-size: 12px; margin-bottom: 10px; }
+        body { font-family: 'Segoe UI', Arial, sans-serif; margin: 0; background: #f4f4f4; color: #333; }
+        header { background: #f57224; color: white; padding: 12px 20px; display: flex; justify-content: space-between; align-items: center; }
+        header h1 { margin: 0; font-size: 20px; cursor: pointer; }
+        nav button { background: white; color: #f57224; border: none; padding: 6px 12px; border-radius: 4px; font-weight: bold; cursor: pointer; }
         
-        .features { background: #f8f9fa; padding: 12px 15px; border-radius: 8px; margin-bottom: 20px; }
-        .features ul { margin: 0; padding-left: 20px; font-size: 14px; color: #444; }
-        .features li { margin-bottom: 6px; }
+        .container { max-width: 1000px; margin: 20px auto; padding: 0 15px; }
+        .page { display: none; }
+        .active { display: block; }
 
+        /* Store Front Grid */
+        .product-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 15px; }
+        .card { background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 5px rgba(0,0,0,0.1); cursor: pointer; transition: 0.2s; }
+        .card:hover { transform: translateY(-3px); }
+        .card img { width: 100%; height: 160px; object-fit: cover; }
+        .card-body { padding: 10px; }
+        .card-title { font-size: 14px; font-weight: 600; height: 36px; overflow: hidden; margin-bottom: 5px; }
+        .card-price { color: #f57224; font-size: 16px; font-weight: bold; }
+
+        /* Product Detail Page */
+        .detail-box { background: white; padding: 20px; border-radius: 8px; display: flex; flex-wrap: wrap; gap: 20px; }
+        .detail-img { max-width: 320px; width: 100%; border-radius: 8px; }
+        .detail-info { flex: 1; }
+        .btn-buy { background: #f57224; color: white; border: none; padding: 12px 25px; font-size: 16px; border-radius: 4px; font-weight: bold; cursor: pointer; margin-top: 15px; }
+
+        /* Order Form & Admin Form */
+        .form-card { background: white; padding: 20px; border-radius: 8px; max-width: 450px; margin: auto; }
         .form-group { margin-bottom: 12px; }
-        label { display: block; font-size: 13px; font-weight: 600; color: #333; margin-bottom: 4px; }
-        input { width: 100%; padding: 11px; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; font-size: 14px; }
-        input:focus { border-color: #27ae60; outline: none; }
-        
-        .btn-submit { width: 100%; background: #27ae60; color: #fff; padding: 14px; border: none; border-radius: 6px; font-size: 18px; font-weight: bold; cursor: pointer; transition: 0.3s; margin-top: 10px; }
-        .btn-submit:hover { background: #219150; }
-        #msg { text-align: center; margin-top: 15px; font-weight: bold; }
+        .form-group label { display: block; font-size: 13px; font-weight: bold; margin-bottom: 4px; }
+        .form-group input, .form-group textarea { width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
+        .btn-submit { background: #27ae60; color: white; border: none; padding: 12px; width: 100%; font-size: 16px; border-radius: 4px; font-weight: bold; cursor: pointer; }
     </style>
 </head>
 <body>
 
+<header>
+    <h1 onclick="showPage('home')">🛍️ ExpressStore</h1>
+    <nav>
+        <button onclick="showPage('admin')">+ Add Product (Admin)</button>
+    </nav>
+</header>
+
 <div class="container">
-    <div style="text-align: center;"><span class="badge">🔥 Limited Time Offer - 35% OFF</span></div>
-    
-    <img src="https://images.unsplash.com/photo-1585338107529-13afc5f02586?w=500" alt="Product Image" class="product-img">
-    
-    <div class="title">Mini Portable Rechargeable Fan</div>
-    
-    <div class="price-tag">
-        <span class="old-price">Rs. 3,500</span>
-        <span class="new-price">Rs. 2,850</span>
+
+    <!-- PAGE 1: STORE FRONT -->
+    <div id="home" class="page active">
+        <h2>Flash Sale Products</h2>
+        <div class="product-grid" id="productGrid"></div>
     </div>
 
-    <div class="features">
-        <ul>
-            <li>High-Speed Cooling Wind ⚡</li>
-            <li>Rechargeable Battery (3-5 Hours Backup) 🔋</li>
-            <li>Compact & Lightweight (Portable) 🎒</li>
-            <li>Free Islandwide Delivery Available 🚚</li>
-        </ul>
+    <!-- PAGE 2: PRODUCT VIEW PAGE -->
+    <div id="productView" class="page">
+        <button onclick="showPage('home')">← Back to Store</button>
+        <br><br>
+        <div class="detail-box">
+            <img id="viewImg" src="" class="detail-img">
+            <div class="detail-info">
+                <h2 id="viewTitle"></h2>
+                <div class="card-price" id="viewPrice" style="font-size: 22px;"></div>
+                <p id="viewDesc" style="color: #666; margin-top: 15px;"></p>
+                <button class="btn-buy" onclick="goToCheckout()">BUY NOW</button>
+            </div>
+        </div>
     </div>
 
-    <!-- Order Form -->
-    <form id="orderForm">
-        <div class="form-group">
-            <label>ඔබේ නම (Name) *</label>
-            <input type="text" name="customerName" placeholder="Full Name" required>
+    <!-- PAGE 3: CHECKOUT ORDER FORM -->
+    <div id="checkout" class="page">
+        <button onclick="showPage('productView')">← Back</button>
+        <br><br>
+        <div class="form-card">
+            <h3>Place Order</h3>
+            <p id="orderProductTitle" style="font-weight: bold; color: #f57224;"></p>
+            <form id="orderForm">
+                <input type="hidden" id="orderProductName" name="productName">
+                <input type="hidden" id="orderSaleAmount" name="saleAmount">
+                
+                <div class="form-group">
+                    <label>නම (Name)*</label>
+                    <input type="text" name="customerName" required>
+                </div>
+                <div class="form-group">
+                    <label>ලිපිනය (Address)*</label>
+                    <input type="text" name="address" required>
+                </div>
+                <div class="form-group">
+                    <label>නගරය (City)*</label>
+                    <input type="text" name="city" required>
+                </div>
+                <div class="form-group">
+                    <label>දුරකථන අංකය (Phone)*</label>
+                    <input type="tel" name="phone1" required>
+                </div>
+                <button type="submit" class="btn-submit" id="subBtn">Confirm Order (COD)</button>
+            </form>
+            <div id="msg" style="text-align:center; margin-top:10px; font-weight:bold;"></div>
         </div>
+    </div>
 
-        <div class="form-group">
-            <label>ලිපිනය (Address) *</label>
-            <input type="text" name="address" placeholder="House No, Street Name" required>
+    <!-- PAGE 4: ADMIN ADD PRODUCT PAGE -->
+    <div id="admin" class="page">
+        <button onclick="showPage('home')">← Back to Store</button>
+        <br><br>
+        <div class="form-card">
+            <h3>Admin Panel - Add Product</h3>
+            <form id="adminForm">
+                <div class="form-group">
+                    <label>Product Name</label>
+                    <input type="text" id="adminName" required>
+                </div>
+                <div class="form-group">
+                    <label>Price (Rs.)</label>
+                    <input type="number" id="adminPrice" required>
+                </div>
+                <div class="form-group">
+                    <label>Image URL</label>
+                    <input type="url" id="adminImg" placeholder="https://..." required>
+                </div>
+                <div class="form-group">
+                    <label>Description</label>
+                    <textarea id="adminDesc" rows="3" required></textarea>
+                </div>
+                <button type="submit" class="btn-submit" style="background:#2980b9;">Save Product</button>
+            </form>
         </div>
+    </div>
 
-        <div class="form-group">
-            <label>නගරය (City) *</label>
-            <input type="text" name="city" placeholder="City" required>
-        </div>
-
-        <div class="form-group">
-            <label>දුරකථන අංකය (Phone Number) *</label>
-            <input type="tel" name="phone1" placeholder="07XXXXXXXX" required>
-        </div>
-
-        <div class="form-group">
-            <label>දෙවන දුරකථන අංකය (Optional)</label>
-            <input type="tel" name="phone2" placeholder="07XXXXXXXX">
-        </div>
-
-        <!-- Hidden Product Data -->
-        <input type="hidden" name="productName" value="Mini Portable Fan">
-        <input type="hidden" name="qty" value="1">
-        <input type="hidden" name="saleAmount" value="2850">
-
-        <button type="submit" class="btn-submit" id="submitBtn">BUY NOW - Rs. 2,850 (COD)</button>
-    </form>
-    
-    <div id="msg"></div>
 </div>
 
 <script>
     const scriptURL = 'https://script.google.com/macros/s/AKfycbyVnuI1o4galwTSdetYBlgXsIjztQs_XakqQrWtcZuIx-no2ypUSwELhTLVbuNrOAkf/exec';
-    const form = document.getElementById('orderForm');
-    const msg = document.getElementById('msg');
-    const submitBtn = document.getElementById('submitBtn');
+    
+    // Default Products
+    let products = [
+        { id: 1, name: 'Mini Portable Fan', price: 2850, img: 'https://images.unsplash.com/photo-1585338107529-13afc5f02586?w=500', desc: 'High quality rechargeable mini fan with 3 speed modes.' },
+        { id: 2, name: 'Hawaiian Cookies 200g', price: 182, img: 'https://images.unsplash.com/photo-1558961363-fa8fdf82db35?w=500', desc: 'Delicious Hawaiian coconut flavored crispy cookies.' }
+    ];
 
-    form.addEventListener('submit', e => {
+    let selectedProduct = null;
+
+    function renderProducts() {
+        const grid = document.getElementById('productGrid');
+        grid.innerHTML = '';
+        products.forEach(p => {
+            grid.innerHTML += `
+                <div class="card" onclick="openProduct(${p.id})">
+                    <img src="${p.img}">
+                    <div class="card-body">
+                        <div class="card-title">${p.name}</div>
+                        <div class="card-price">Rs. ${p.price}</div>
+                    </div>
+                </div>
+            `;
+        });
+    }
+
+    function showPage(pageId) {
+        document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+        document.getElementById(pageId).classList.add('active');
+    }
+
+    function openProduct(id) {
+        selectedProduct = products.find(p => p.id === id);
+        document.getElementById('viewImg').src = selectedProduct.img;
+        document.getElementById('viewTitle').innerText = selectedProduct.name;
+        document.getElementById('viewPrice').innerText = 'Rs. ' + selectedProduct.price;
+        document.getElementById('viewDesc').innerText = selectedProduct.desc;
+        showPage('productView');
+    }
+
+    function goToCheckout() {
+        document.getElementById('orderProductTitle').innerText = selectedProduct.name + ' - Rs. ' + selectedProduct.price;
+        document.getElementById('orderProductName').value = selectedProduct.name;
+        document.getElementById('orderSaleAmount').value = selectedProduct.price;
+        showPage('checkout');
+    }
+
+    // Handle Order Submit
+    document.getElementById('orderForm').addEventListener('submit', e => {
         e.preventDefault();
-        submitBtn.disabled = true;
-        submitBtn.innerText = 'Processing Order...';
-        msg.style.color = 'black';
-        msg.innerText = 'ඔබේ Order එක යවමින් පවතී...';
+        const subBtn = document.getElementById('subBtn');
+        const msg = document.getElementById('msg');
+        subBtn.disabled = true;
+        msg.innerText = 'Processing Order...';
 
-        const formData = new FormData(form);
-        const data = Object.fromEntries(formData.entries());
+        const data = Object.fromEntries(new FormData(e.target).entries());
 
         fetch(scriptURL, {
             method: 'POST',
@@ -113,18 +198,36 @@
         })
         .then(() => {
             msg.style.color = 'green';
-            msg.innerText = 'SUCCESS! ඔබේ Order එක භාරගන්නා ලදී. ඉක්මනින්ම ඔබට කතා කරන්නෙමු.';
-            form.reset();
-            submitBtn.disabled = false;
-            submitBtn.innerText = 'BUY NOW - Rs. 2,850 (COD)';
+            msg.innerText = 'Order Successful!';
+            e.target.reset();
+            subBtn.disabled = false;
         })
-        .catch(error => {
+        .catch(() => {
             msg.style.color = 'red';
-            msg.innerText = 'Error! නැවත උත්සාහ කරන්න.';
-            submitBtn.disabled = false;
-            submitBtn.innerText = 'BUY NOW - Rs. 2,850 (COD)';
+            msg.innerText = 'Error placing order.';
+            subBtn.disabled = false;
         });
     });
+
+    // Handle Admin Add Product
+    document.getElementById('adminForm').addEventListener('submit', e => {
+        e.preventDefault();
+        const newProduct = {
+            id: Date.now(),
+            name: document.getElementById('adminName').value,
+            price: document.getElementById('adminPrice').value,
+            img: document.getElementById('adminImg').value,
+            desc: document.getElementById('adminDesc').value
+        };
+        products.push(newProduct);
+        renderProducts();
+        alert('Product Added Successfully!');
+        e.target.reset();
+        showPage('home');
+    });
+
+    // Initial Load
+    renderProducts();
 </script>
 
 </body>
