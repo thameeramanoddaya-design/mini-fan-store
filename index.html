@@ -3,18 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Multi-Page Mini Store</title>
+    <title>ExpressStore</title>
     <style>
         body { font-family: 'Segoe UI', Arial, sans-serif; margin: 0; background: #f4f4f4; color: #333; }
-        header { background: #f57224; color: white; padding: 12px 20px; display: flex; justify-content: space-between; align-items: center; }
-        header h1 { margin: 0; font-size: 20px; cursor: pointer; }
-        nav button { background: white; color: #f57224; border: none; padding: 6px 12px; border-radius: 4px; font-weight: bold; cursor: pointer; }
+        header { background: #f57224; color: white; padding: 15px 20px; text-align: center; }
+        header h1 { margin: 0; font-size: 22px; cursor: pointer; }
         
         .container { max-width: 1000px; margin: 20px auto; padding: 0 15px; }
         .page { display: none; }
         .active { display: block; }
 
-        /* Store Grid */
         .product-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 15px; }
         .card { background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 5px rgba(0,0,0,0.1); cursor: pointer; transition: 0.2s; }
         .card:hover { transform: translateY(-3px); }
@@ -23,38 +21,35 @@
         .card-title { font-size: 14px; font-weight: 600; height: 36px; overflow: hidden; margin-bottom: 5px; }
         .card-price { color: #f57224; font-size: 16px; font-weight: bold; }
 
-        /* Product View */
         .detail-box { background: white; padding: 20px; border-radius: 8px; display: flex; flex-wrap: wrap; gap: 20px; }
         .detail-img { max-width: 320px; width: 100%; border-radius: 8px; }
         .detail-info { flex: 1; }
         .btn-buy { background: #f57224; color: white; border: none; padding: 12px 25px; font-size: 16px; border-radius: 4px; font-weight: bold; cursor: pointer; margin-top: 15px; }
 
-        /* Forms */
         .form-card { background: white; padding: 20px; border-radius: 8px; max-width: 450px; margin: auto; }
         .form-group { margin-bottom: 12px; }
         .form-group label { display: block; font-size: 13px; font-weight: bold; margin-bottom: 4px; }
-        .form-group input, .form-group textarea { width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
+        .form-group input { width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
         .btn-submit { background: #27ae60; color: white; border: none; padding: 12px; width: 100%; font-size: 16px; border-radius: 4px; font-weight: bold; cursor: pointer; }
+        .loading { text-align: center; font-weight: bold; padding: 40px; color: #666; }
     </style>
 </head>
 <body>
 
 <header>
     <h1 onclick="navigate('#/')">🛍️ ExpressStore</h1>
-    <nav>
-        <button onclick="navigate('#/admin')">+ Add Product (Admin)</button>
-    </nav>
 </header>
 
 <div class="container">
 
-    <!-- PAGE 1: MAIN STORE -->
+    <!-- HOME PAGE -->
     <div id="home-page" class="page">
-        <h2>Flash Sale Products</h2>
+        <h2>Featured Products</h2>
+        <div id="loading" class="loading">Loading Products...</div>
         <div class="product-grid" id="productGrid"></div>
     </div>
 
-    <!-- PAGE 2: PRODUCT VIEW -->
+    <!-- PRODUCT DETAIL PAGE -->
     <div id="product-page" class="page">
         <button onclick="navigate('#/')">← Back to Store</button>
         <br><br>
@@ -69,7 +64,7 @@
         </div>
     </div>
 
-    <!-- PAGE 3: CHECKOUT -->
+    <!-- CHECKOUT PAGE -->
     <div id="checkout-page" class="page">
         <button onclick="window.history.back()">← Back</button>
         <br><br>
@@ -102,45 +97,28 @@
         </div>
     </div>
 
-    <!-- PAGE 4: ADMIN -->
-    <div id="admin-page" class="page">
-        <button onclick="navigate('#/')">← Back to Store</button>
-        <br><br>
-        <div class="form-card">
-            <h3>Admin Panel - Add Product</h3>
-            <form id="adminForm">
-                <div class="form-group">
-                    <label>Product Name</label>
-                    <input type="text" id="adminName" required>
-                </div>
-                <div class="form-group">
-                    <label>Price (Rs.)</label>
-                    <input type="number" id="adminPrice" required>
-                </div>
-                <div class="form-group">
-                    <label>Image URL</label>
-                    <input type="url" id="adminImg" placeholder="https://..." required>
-                </div>
-                <div class="form-group">
-                    <label>Description</label>
-                    <textarea id="adminDesc" rows="3" required></textarea>
-                </div>
-                <button type="submit" class="btn-submit" style="background:#2980b9;">Save Product</button>
-            </form>
-        </div>
-    </div>
-
 </div>
 
 <script>
-    const scriptURL = 'https://script.google.com/macros/s/AKfycbyVnuI1o4galwTSdetYBlgXsIjztQs_XakqQrWtcZuIx-no2ypUSwELhTLVbuNrOAkf/exec';
+    // ඔබේ Google Apps Script URL එක මෙතැනට දෙන්න
+    const scriptURL = 'YOUR_GOOGLE_APPS_SCRIPT_WEB_APP_URL';
     
-    let products = [
-        { id: '1', name: 'Mini Portable Rechargeable Fan', price: 2850, img: 'https://images.unsplash.com/photo-1585338107529-13afc5f02586?w=500', desc: 'High quality rechargeable mini fan with 3 speed modes.' },
-        { id: '2', name: 'Munchee Hawaiian Cookies 200g', price: 182, img: 'https://images.unsplash.com/photo-1558961363-fa8fdf82db35?w=500', desc: 'Delicious Hawaiian coconut flavored crispy cookies.' }
-    ];
-
+    let products = [];
     let currentSelectedProduct = null;
+
+    function fetchProducts() {
+        fetch(scriptURL)
+            .then(res => res.json())
+            .then(data => {
+                products = data;
+                document.getElementById('loading').style.display = 'none';
+                renderProducts();
+                handleRouting();
+            })
+            .catch(err => {
+                document.getElementById('loading').innerText = 'Error loading products.';
+            });
+    }
 
     function navigate(hash) {
         window.location.hash = hash;
@@ -151,7 +129,6 @@
         document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
 
         if (hash === '#/' || hash === '') {
-            renderProducts();
             document.getElementById('home-page').classList.add('active');
         } 
         else if (hash.startsWith('#/product/')) {
@@ -176,9 +153,6 @@
             document.getElementById('orderProductName').value = currentSelectedProduct.name;
             document.getElementById('orderSaleAmount').value = currentSelectedProduct.price;
             document.getElementById('checkout-page').classList.add('active');
-        } 
-        else if (hash === '#/admin') {
-            document.getElementById('admin-page').classList.add('active');
         }
     }
 
@@ -204,7 +178,6 @@
         }
     }
 
-    // Submit Order to Google Sheet
     document.getElementById('orderForm').addEventListener('submit', e => {
         e.preventDefault();
         const subBtn = document.getElementById('subBtn');
@@ -233,24 +206,8 @@
         });
     });
 
-    // Admin Add Product
-    document.getElementById('adminForm').addEventListener('submit', e => {
-        e.preventDefault();
-        const newProd = {
-            id: Date.now().toString(),
-            name: document.getElementById('adminName').value,
-            price: document.getElementById('adminPrice').value,
-            img: document.getElementById('adminImg').value,
-            desc: document.getElementById('adminDesc').value
-        };
-        products.push(newProd);
-        alert('Product Added Successfully!');
-        e.target.reset();
-        navigate('#/');
-    });
-
     window.addEventListener('hashchange', handleRouting);
-    window.addEventListener('load', handleRouting);
+    window.addEventListener('load', fetchProducts);
 </script>
 
 </body>
