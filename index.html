@@ -3,211 +3,187 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ExpressStore</title>
+    <title>Mini Online Store</title>
     <style>
-        body { font-family: 'Segoe UI', Arial, sans-serif; margin: 0; background: #f4f4f4; color: #333; }
-        header { background: #f57224; color: white; padding: 15px 20px; text-align: center; }
-        header h1 { margin: 0; font-size: 22px; cursor: pointer; }
+        * { box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f8f9fa; margin: 0; padding: 20px; }
+        header { text-align: center; margin-bottom: 30px; }
+        h1 { color: #2c3e50; margin-bottom: 5px; }
         
-        .container { max-width: 1000px; margin: 20px auto; padding: 0 15px; }
-        .page { display: none; }
-        .active { display: block; }
+        /* Products Grid Style */
+        .products-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 20px; max-width: 1100px; margin: 0 auto; }
+        .product-card { background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.1); display: flex; flex-direction: column; justify-content: space-between; padding: 15px; }
+        .product-card img { width: 100%; height: 200px; object-fit: cover; border-radius: 6px; }
+        .product-title { font-size: 18px; font-weight: bold; margin: 10px 0 5px 0; color: #333; }
+        .product-price { font-size: 16px; color: #e74c3c; font-weight: bold; margin-bottom: 10px; }
+        .product-desc { font-size: 13px; color: #666; margin-bottom: 15px; flex-grow: 1; }
+        .buy-btn { background: #27ae60; color: white; border: none; padding: 10px; width: 100%; border-radius: 4px; font-weight: bold; cursor: pointer; font-size: 14px; }
+        .buy-btn:hover { background: #219150; }
 
-        .product-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 15px; }
-        .card { background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 5px rgba(0,0,0,0.1); cursor: pointer; transition: 0.2s; }
-        .card:hover { transform: translateY(-3px); }
-        .card img { width: 100%; height: 160px; object-fit: cover; }
-        .card-body { padding: 10px; }
-        .card-title { font-size: 14px; font-weight: 600; height: 36px; overflow: hidden; margin-bottom: 5px; }
-        .card-price { color: #f57224; font-size: 16px; font-weight: bold; }
-
-        .detail-box { background: white; padding: 20px; border-radius: 8px; display: flex; flex-wrap: wrap; gap: 20px; }
-        .detail-img { max-width: 320px; width: 100%; border-radius: 8px; }
-        .detail-info { flex: 1; }
-        .btn-buy { background: #f57224; color: white; border: none; padding: 12px 25px; font-size: 16px; border-radius: 4px; font-weight: bold; cursor: pointer; margin-top: 15px; }
-
-        .form-card { background: white; padding: 20px; border-radius: 8px; max-width: 450px; margin: auto; }
+        /* Order Modal Form Style */
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); justify-content: center; align-items: center; padding: 15px; z-index: 1000; }
+        .modal-content { background: white; padding: 25px; border-radius: 8px; max-width: 450px; width: 100%; position: relative; }
+        .close-btn { position: absolute; top: 10px; right: 15px; font-size: 22px; cursor: pointer; color: #777; }
         .form-group { margin-bottom: 12px; }
-        .form-group label { display: block; font-size: 13px; font-weight: bold; margin-bottom: 4px; }
-        .form-group input { width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
-        .btn-submit { background: #27ae60; color: white; border: none; padding: 12px; width: 100%; font-size: 16px; border-radius: 4px; font-weight: bold; cursor: pointer; }
-        .loading { text-align: center; font-weight: bold; padding: 40px; color: #666; }
+        .form-group label { display: block; font-size: 12px; font-weight: bold; margin-bottom: 4px; }
+        .form-group input, .form-group select { width: 100%; padding: 9px; border: 1px solid #ccc; border-radius: 4px; }
+        .submit-btn { background: #2980b9; color: white; border: none; padding: 12px; width: 100%; font-size: 15px; font-weight: bold; border-radius: 4px; cursor: pointer; margin-top: 10px; }
+        .submit-btn:disabled { background: #bdc3c7; }
+        
+        #loading { text-align: center; font-size: 18px; color: #555; width: 100%; padding: 40px; }
+        #order-status { text-align: center; font-weight: bold; margin-top: 10px; }
     </style>
 </head>
 <body>
 
 <header>
-    <h1 onclick="navigate('#/')">🛍️ ExpressStore</h1>
+    <h1>🛒 Our Online Store</h1>
+    <p>Select a product and place your order easily!</p>
 </header>
 
-<div class="container">
+<!-- Loading Text -->
+<div id="loading">Loading products...</div>
 
-    <!-- HOME PAGE -->
-    <div id="home-page" class="page">
-        <h2>Featured Products</h2>
-        <div id="loading" class="loading">Loading Products...</div>
-        <div class="product-grid" id="productGrid"></div>
-    </div>
+<!-- Products Display Area -->
+<div class="products-grid" id="productsContainer"></div>
 
-    <!-- PRODUCT DETAIL PAGE -->
-    <div id="product-page" class="page">
-        <button onclick="navigate('#/')">← Back to Store</button>
-        <br><br>
-        <div class="detail-box">
-            <img id="viewImg" src="" class="detail-img">
-            <div class="detail-info">
-                <h2 id="viewTitle"></h2>
-                <div class="card-price" id="viewPrice" style="font-size: 22px;"></div>
-                <p id="viewDesc" style="color: #666; margin-top: 15px;"></p>
-                <button class="btn-buy" onclick="goToCheckout()">BUY NOW</button>
+<!-- Order Modal Popup -->
+<div class="modal" id="orderModal">
+    <div class="modal-content">
+        <span class="close-btn" onclick="closeModal()">&times;</span>
+        <h3 style="margin-top:0;">📦 Place Your Order</h3>
+        <p id="selectedProductTitle" style="font-weight:bold; color:#2c3e50; margin-bottom:15px;"></p>
+        
+        <form id="orderForm">
+            <input type="hidden" id="productName">
+            <input type="hidden" id="productPrice">
+
+            <div class="form-group">
+                <label>Your Name</label>
+                <input type="text" id="custName" required placeholder="Full Name">
             </div>
-        </div>
-    </div>
+            <div class="form-group">
+                <label>Delivery Address</label>
+                <input type="text" id="custAddress" required placeholder="Street Address">
+            </div>
+            <div class="form-group">
+                <label>City</label>
+                <input type="text" id="custCity" required placeholder="City">
+            </div>
+            <div class="form-group">
+                <label>District</label>
+                <input type="text" id="custDistrict" required placeholder="District">
+            </div>
+            <div class="form-group">
+                <label>Phone Number 1</label>
+                <input type="tel" id="custPhone" required placeholder="07XXXXXXXX">
+            </div>
+            <div class="form-group">
+                <label>Phone Number 2 (Optional)</label>
+                <input type="tel" id="custPhone2" placeholder="07XXXXXXXX">
+            </div>
 
-    <!-- CHECKOUT PAGE -->
-    <div id="checkout-page" class="page">
-        <button onclick="window.history.back()">← Back</button>
-        <br><br>
-        <div class="form-card">
-            <h3>Place Order</h3>
-            <p id="orderProductTitle" style="font-weight: bold; color: #f57224;"></p>
-            <form id="orderForm">
-                <input type="hidden" id="orderProductName" name="productName">
-                <input type="hidden" id="orderSaleAmount" name="saleAmount">
-                
-                <div class="form-group">
-                    <label>නම (Name)*</label>
-                    <input type="text" name="customerName" required>
-                </div>
-                <div class="form-group">
-                    <label>ලිපිනය (Address)*</label>
-                    <input type="text" name="address" required>
-                </div>
-                <div class="form-group">
-                    <label>නගරය (City)*</label>
-                    <input type="text" name="city" required>
-                </div>
-                <div class="form-group">
-                    <label>දුරකථන අංකය (Phone)*</label>
-                    <input type="tel" name="phone1" required>
-                </div>
-                <button type="submit" class="btn-submit" id="subBtn">Confirm Order (COD)</button>
-            </form>
-            <div id="msg" style="text-align:center; margin-top:10px; font-weight:bold;"></div>
-        </div>
+            <button type="submit" class="submit-btn" id="orderSubmitBtn">Confirm Order</button>
+        </form>
+        <div id="order-status"></div>
     </div>
-
 </div>
 
 <script>
-    // ඔබේ Google Apps Script URL එක මෙතැනට දෙන්න
-    const scriptURL = 'YOUR_GOOGLE_APPS_SCRIPT_WEB_APP_URL';
-    
-    let products = [];
-    let currentSelectedProduct = null;
+    // ⚠️ ඔබේ APPS SCRIPT WEB APP URLS දෙක මෙතැනට දෙන්න
+    const PRODUCT_SCRIPT_URL = 'YOUR_PRODUCTS_APPS_SCRIPT_URL';
+    const ORDERS_SCRIPT_URL  = 'YOUR_ORDERS_APPS_SCRIPT_URL';
 
-    function fetchProducts() {
-        fetch(scriptURL)
+    // 1. Products Load කර ගැනීම
+    function loadProducts() {
+        fetch(`${PRODUCT_SCRIPT_URL}?action=getProducts`)
             .then(res => res.json())
             .then(data => {
-                products = data;
                 document.getElementById('loading').style.display = 'none';
-                renderProducts();
-                handleRouting();
+                const container = document.getElementById('productsContainer');
+                container.innerHTML = '';
+
+                if (data.length === 0) {
+                    container.innerHTML = '<p style="grid-column: 1/-1; text-align:center;">No products available right now.</p>';
+                    return;
+                }
+
+                data.forEach(item => {
+                    const card = document.createElement('div');
+                    card.className = 'product-card';
+                    card.innerHTML = `
+                        <img src="${item.image || item.img || 'https://via.placeholder.com/200'}" alt="${item.name}">
+                        <div class="product-title">${item.name}</div>
+                        <div class="product-price">Rs. ${item.price}</div>
+                        <div class="product-desc">${item.description || item.desc || ''}</div>
+                        <button class="buy-btn" onclick="openOrderModal('${item.name}', '${item.price}')">Buy Now</button>
+                    `;
+                    container.appendChild(card);
+                });
             })
             .catch(err => {
-                document.getElementById('loading').innerText = 'Error loading products.';
+                console.error(err);
+                document.getElementById('loading').innerText = 'Failed to load products. Check script URL.';
             });
     }
 
-    function navigate(hash) {
-        window.location.hash = hash;
+    // 2. Order Modal එක Open කිරීම
+    function openOrderModal(name, price) {
+        document.getElementById('selectedProductTitle').innerText = `${name} - Rs. ${price}`;
+        document.getElementById('productName').value = name;
+        document.getElementById('productPrice').value = price;
+        document.getElementById('orderModal').style.display = 'flex';
+        document.getElementById('order-status').innerText = '';
     }
 
-    function handleRouting() {
-        const hash = window.location.hash || '#/';
-        document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-
-        if (hash === '#/' || hash === '') {
-            document.getElementById('home-page').classList.add('active');
-        } 
-        else if (hash.startsWith('#/product/')) {
-            const prodId = hash.split('#/product/')[1];
-            currentSelectedProduct = products.find(p => p.id === prodId);
-            if (currentSelectedProduct) {
-                document.getElementById('viewImg').src = currentSelectedProduct.img;
-                document.getElementById('viewTitle').innerText = currentSelectedProduct.name;
-                document.getElementById('viewPrice').innerText = 'Rs. ' + currentSelectedProduct.price;
-                document.getElementById('viewDesc').innerText = currentSelectedProduct.desc;
-                document.getElementById('product-page').classList.add('active');
-            } else {
-                navigate('#/');
-            }
-        } 
-        else if (hash.startsWith('#/checkout')) {
-            if (!currentSelectedProduct) {
-                navigate('#/');
-                return;
-            }
-            document.getElementById('orderProductTitle').innerText = currentSelectedProduct.name + ' - Rs. ' + currentSelectedProduct.price;
-            document.getElementById('orderProductName').value = currentSelectedProduct.name;
-            document.getElementById('orderSaleAmount').value = currentSelectedProduct.price;
-            document.getElementById('checkout-page').classList.add('active');
-        }
+    function closeModal() {
+        document.getElementById('orderModal').style.display = 'none';
     }
 
-    function renderProducts() {
-        const grid = document.getElementById('productGrid');
-        grid.innerHTML = '';
-        products.forEach(p => {
-            grid.innerHTML += `
-                <div class="card" onclick="navigate('#/product/${p.id}')">
-                    <img src="${p.img}">
-                    <div class="card-body">
-                        <div class="card-title">${p.name}</div>
-                        <div class="card-price">Rs. ${p.price}</div>
-                    </div>
-                </div>
-            `;
-        });
-    }
-
-    function goToCheckout() {
-        if (currentSelectedProduct) {
-            navigate('#/checkout/' + currentSelectedProduct.id);
-        }
-    }
-
+    // 3. Customer Order එක Submit කිරීම (Orders Sheet එකට යැවීම)
     document.getElementById('orderForm').addEventListener('submit', e => {
         e.preventDefault();
-        const subBtn = document.getElementById('subBtn');
-        const msg = document.getElementById('msg');
-        subBtn.disabled = true;
-        msg.innerText = 'Processing Order...';
+        const btn = document.getElementById('orderSubmitBtn');
+        const status = document.getElementById('order-status');
 
-        const data = Object.fromEntries(new FormData(e.target).entries());
+        btn.disabled = true;
+        status.style.color = '#333';
+        status.innerText = 'Placing order...';
 
-        fetch(scriptURL, {
+        const payload = {
+            action: 'addOrder',
+            product: document.getElementById('productName').value,
+            price: document.getElementById('productPrice').value,
+            name: document.getElementById('custName').value,
+            address: document.getElementById('custAddress').value,
+            city: document.getElementById('custCity').value,
+            district: document.getElementById('custDistrict').value,
+            phone: document.getElementById('custPhone').value,
+            phone2: document.getElementById('custPhone2').value
+        };
+
+        fetch(ORDERS_SCRIPT_URL, {
             method: 'POST',
             mode: 'no-cors',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(data)
+            body: JSON.stringify(payload)
         })
         .then(() => {
-            msg.style.color = 'green';
-            msg.innerText = 'Order Successful!';
+            status.style.color = 'green';
+            status.innerText = 'Order Placed Successfully! Thank you.';
             e.target.reset();
-            subBtn.disabled = false;
+            btn.disabled = false;
+            setTimeout(closeModal, 2500);
         })
         .catch(() => {
-            msg.style.color = 'red';
-            msg.innerText = 'Error placing order.';
-            subBtn.disabled = false;
+            status.style.color = 'red';
+            status.innerText = 'Error placing order. Try again.';
+            btn.disabled = false;
         });
     });
 
-    window.addEventListener('hashchange', handleRouting);
-    window.addEventListener('load', fetchProducts);
+    // Page එක Load වෙද්දීම Products ගන්න
+    loadProducts();
 </script>
 
 </body>
