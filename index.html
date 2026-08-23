@@ -52,7 +52,7 @@
         <p id="selectedProductTitle" style="font-weight:bold; color:#2c3e50; margin-bottom:15px;"></p>
         
         <form id="orderForm">
-            <!-- Product ID එක Customer ට නොපෙනෙන ලෙස Hidden Input කර ඇත -->
+            <!-- Customer ට නොපෙනෙන Hidden Inputs -->
             <input type="hidden" id="productId">
             <input type="hidden" id="productName">
             <input type="hidden" id="productPrice">
@@ -90,6 +90,8 @@
 
 <script>
     const PRODUCT_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzlo2ie_kPErggg1boh4JpWYA11sun464xVVw3BcKntEGqWiEul9J5NiD00EwWc3zB_/exec';
+    
+    // ඔබ ලබාදුන් අලුත් Order Script URL එක
     const ORDERS_SCRIPT_URL  = 'https://script.google.com/macros/s/AKfycbxOvIObMv6n89Bjk0oIdLoZntv1AKoxYHmCLqGaItU0-07RgWwsBuel5xWIK57gztws/exec';
 
     function loadProducts() {
@@ -111,7 +113,7 @@
                     const card = document.createElement('div');
                     card.className = 'product-card';
                     
-                    const pId = item.id || '';
+                    const pId = item.id || item.ID || '';
                     const imgUrl = item.image || item.img || 'https://via.placeholder.com/200';
                     const name = item.name || 'Unnamed Product';
                     const price = item.price || '0';
@@ -135,9 +137,9 @@
 
     function openOrderModal(id, name, price) {
         document.getElementById('productId').value = id;
-        document.getElementById('selectedProductTitle').innerText = `${name} - Rs. ${price}`;
         document.getElementById('productName').value = name;
         document.getElementById('productPrice').value = price;
+        document.getElementById('selectedProductTitle').innerText = `${name} - Rs. ${price}`;
         document.getElementById('orderModal').style.display = 'flex';
         document.getElementById('order-status').innerText = '';
     }
