@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mini Store</title>
+    <title>Multi-Page Mini Store</title>
     <style>
         body { font-family: 'Segoe UI', Arial, sans-serif; margin: 0; background: #f4f4f4; color: #333; }
         header { background: #f57224; color: white; padding: 12px 20px; display: flex; justify-content: space-between; align-items: center; }
@@ -14,7 +14,7 @@
         .page { display: none; }
         .active { display: block; }
 
-        /* Store Front Grid */
+        /* Store Grid */
         .product-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 15px; }
         .card { background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 5px rgba(0,0,0,0.1); cursor: pointer; transition: 0.2s; }
         .card:hover { transform: translateY(-3px); }
@@ -23,13 +23,13 @@
         .card-title { font-size: 14px; font-weight: 600; height: 36px; overflow: hidden; margin-bottom: 5px; }
         .card-price { color: #f57224; font-size: 16px; font-weight: bold; }
 
-        /* Product Detail Page */
+        /* Product View */
         .detail-box { background: white; padding: 20px; border-radius: 8px; display: flex; flex-wrap: wrap; gap: 20px; }
         .detail-img { max-width: 320px; width: 100%; border-radius: 8px; }
         .detail-info { flex: 1; }
         .btn-buy { background: #f57224; color: white; border: none; padding: 12px 25px; font-size: 16px; border-radius: 4px; font-weight: bold; cursor: pointer; margin-top: 15px; }
 
-        /* Order Form & Admin Form */
+        /* Forms */
         .form-card { background: white; padding: 20px; border-radius: 8px; max-width: 450px; margin: auto; }
         .form-group { margin-bottom: 12px; }
         .form-group label { display: block; font-size: 13px; font-weight: bold; margin-bottom: 4px; }
@@ -40,23 +40,23 @@
 <body>
 
 <header>
-    <h1 onclick="showPage('home')">🛍️ ExpressStore</h1>
+    <h1 onclick="navigate('#/')">🛍️ ExpressStore</h1>
     <nav>
-        <button onclick="showPage('admin')">+ Add Product (Admin)</button>
+        <button onclick="navigate('#/admin')">+ Add Product (Admin)</button>
     </nav>
 </header>
 
 <div class="container">
 
-    <!-- PAGE 1: STORE FRONT -->
-    <div id="home" class="page active">
+    <!-- PAGE 1: MAIN STORE -->
+    <div id="home-page" class="page">
         <h2>Flash Sale Products</h2>
         <div class="product-grid" id="productGrid"></div>
     </div>
 
-    <!-- PAGE 2: PRODUCT VIEW PAGE -->
-    <div id="productView" class="page">
-        <button onclick="showPage('home')">← Back to Store</button>
+    <!-- PAGE 2: PRODUCT VIEW -->
+    <div id="product-page" class="page">
+        <button onclick="navigate('#/')">← Back to Store</button>
         <br><br>
         <div class="detail-box">
             <img id="viewImg" src="" class="detail-img">
@@ -69,9 +69,9 @@
         </div>
     </div>
 
-    <!-- PAGE 3: CHECKOUT ORDER FORM -->
-    <div id="checkout" class="page">
-        <button onclick="showPage('productView')">← Back</button>
+    <!-- PAGE 3: CHECKOUT -->
+    <div id="checkout-page" class="page">
+        <button onclick="window.history.back()">← Back</button>
         <br><br>
         <div class="form-card">
             <h3>Place Order</h3>
@@ -102,9 +102,9 @@
         </div>
     </div>
 
-    <!-- PAGE 4: ADMIN ADD PRODUCT PAGE -->
-    <div id="admin" class="page">
-        <button onclick="showPage('home')">← Back to Store</button>
+    <!-- PAGE 4: ADMIN -->
+    <div id="admin-page" class="page">
+        <button onclick="navigate('#/')">← Back to Store</button>
         <br><br>
         <div class="form-card">
             <h3>Admin Panel - Add Product</h3>
@@ -135,20 +135,59 @@
 <script>
     const scriptURL = 'https://script.google.com/macros/s/AKfycbyVnuI1o4galwTSdetYBlgXsIjztQs_XakqQrWtcZuIx-no2ypUSwELhTLVbuNrOAkf/exec';
     
-    // Default Products
     let products = [
-        { id: 1, name: 'Mini Portable Fan', price: 2850, img: 'https://images.unsplash.com/photo-1585338107529-13afc5f02586?w=500', desc: 'High quality rechargeable mini fan with 3 speed modes.' },
-        { id: 2, name: 'Hawaiian Cookies 200g', price: 182, img: 'https://images.unsplash.com/photo-1558961363-fa8fdf82db35?w=500', desc: 'Delicious Hawaiian coconut flavored crispy cookies.' }
+        { id: '1', name: 'Mini Portable Rechargeable Fan', price: 2850, img: 'https://images.unsplash.com/photo-1585338107529-13afc5f02586?w=500', desc: 'High quality rechargeable mini fan with 3 speed modes.' },
+        { id: '2', name: 'Munchee Hawaiian Cookies 200g', price: 182, img: 'https://images.unsplash.com/photo-1558961363-fa8fdf82db35?w=500', desc: 'Delicious Hawaiian coconut flavored crispy cookies.' }
     ];
 
-    let selectedProduct = null;
+    let currentSelectedProduct = null;
+
+    function navigate(hash) {
+        window.location.hash = hash;
+    }
+
+    function handleRouting() {
+        const hash = window.location.hash || '#/';
+        document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+
+        if (hash === '#/' || hash === '') {
+            renderProducts();
+            document.getElementById('home-page').classList.add('active');
+        } 
+        else if (hash.startsWith('#/product/')) {
+            const prodId = hash.split('#/product/')[1];
+            currentSelectedProduct = products.find(p => p.id === prodId);
+            if (currentSelectedProduct) {
+                document.getElementById('viewImg').src = currentSelectedProduct.img;
+                document.getElementById('viewTitle').innerText = currentSelectedProduct.name;
+                document.getElementById('viewPrice').innerText = 'Rs. ' + currentSelectedProduct.price;
+                document.getElementById('viewDesc').innerText = currentSelectedProduct.desc;
+                document.getElementById('product-page').classList.add('active');
+            } else {
+                navigate('#/');
+            }
+        } 
+        else if (hash.startsWith('#/checkout')) {
+            if (!currentSelectedProduct) {
+                navigate('#/');
+                return;
+            }
+            document.getElementById('orderProductTitle').innerText = currentSelectedProduct.name + ' - Rs. ' + currentSelectedProduct.price;
+            document.getElementById('orderProductName').value = currentSelectedProduct.name;
+            document.getElementById('orderSaleAmount').value = currentSelectedProduct.price;
+            document.getElementById('checkout-page').classList.add('active');
+        } 
+        else if (hash === '#/admin') {
+            document.getElementById('admin-page').classList.add('active');
+        }
+    }
 
     function renderProducts() {
         const grid = document.getElementById('productGrid');
         grid.innerHTML = '';
         products.forEach(p => {
             grid.innerHTML += `
-                <div class="card" onclick="openProduct(${p.id})">
+                <div class="card" onclick="navigate('#/product/${p.id}')">
                     <img src="${p.img}">
                     <div class="card-body">
                         <div class="card-title">${p.name}</div>
@@ -159,28 +198,13 @@
         });
     }
 
-    function showPage(pageId) {
-        document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-        document.getElementById(pageId).classList.add('active');
-    }
-
-    function openProduct(id) {
-        selectedProduct = products.find(p => p.id === id);
-        document.getElementById('viewImg').src = selectedProduct.img;
-        document.getElementById('viewTitle').innerText = selectedProduct.name;
-        document.getElementById('viewPrice').innerText = 'Rs. ' + selectedProduct.price;
-        document.getElementById('viewDesc').innerText = selectedProduct.desc;
-        showPage('productView');
-    }
-
     function goToCheckout() {
-        document.getElementById('orderProductTitle').innerText = selectedProduct.name + ' - Rs. ' + selectedProduct.price;
-        document.getElementById('orderProductName').value = selectedProduct.name;
-        document.getElementById('orderSaleAmount').value = selectedProduct.price;
-        showPage('checkout');
+        if (currentSelectedProduct) {
+            navigate('#/checkout/' + currentSelectedProduct.id);
+        }
     }
 
-    // Handle Order Submit
+    // Submit Order to Google Sheet
     document.getElementById('orderForm').addEventListener('submit', e => {
         e.preventDefault();
         const subBtn = document.getElementById('subBtn');
@@ -209,25 +233,24 @@
         });
     });
 
-    // Handle Admin Add Product
+    // Admin Add Product
     document.getElementById('adminForm').addEventListener('submit', e => {
         e.preventDefault();
-        const newProduct = {
-            id: Date.now(),
+        const newProd = {
+            id: Date.now().toString(),
             name: document.getElementById('adminName').value,
             price: document.getElementById('adminPrice').value,
             img: document.getElementById('adminImg').value,
             desc: document.getElementById('adminDesc').value
         };
-        products.push(newProduct);
-        renderProducts();
+        products.push(newProd);
         alert('Product Added Successfully!');
         e.target.reset();
-        showPage('home');
+        navigate('#/');
     });
 
-    // Initial Load
-    renderProducts();
+    window.addEventListener('hashchange', handleRouting);
+    window.addEventListener('load', handleRouting);
 </script>
 
 </body>
