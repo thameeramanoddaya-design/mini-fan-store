@@ -1,132 +1,97 @@
-<!DOCTYPE html>
-<html lang="si">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mini Portable Fan - Special Offer</title>
-    <style>
-        body { font-family: 'Segoe UI', Arial, sans-serif; background-color: #f4f7f6; margin: 0; padding: 15px; }
-        .container { max-width: 480px; margin: auto; background: #ffffff; border-radius: 12px; padding: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); }
-        .product-img { width: 100%; border-radius: 8px; object-fit: cover; }
-        .title { font-size: 22px; font-weight: bold; color: #2c3e50; margin: 12px 0 5px 0; text-align: center; }
-        .price-tag { text-align: center; margin-bottom: 15px; }
-        .old-price { text-decoration: line-through; color: #e74c3c; font-size: 16px; margin-right: 8px; }
-        .new-price { color: #27ae60; font-size: 24px; font-weight: bold; }
-        .badge { display: inline-block; background: #ffeaa7; color: #d63031; font-weight: bold; padding: 4px 12px; border-radius: 20px; font-size: 12px; margin-bottom: 10px; }
-        
-        .features { background: #f8f9fa; padding: 12px 15px; border-radius: 8px; margin-bottom: 20px; }
-        .features ul { margin: 0; padding-left: 20px; font-size: 14px; color: #444; }
-        .features li { margin-bottom: 6px; }
+// A2Z Portal එකේ ඔබේ Login Details
+const A2Z_EMAIL = "thameeramanoddaya@gmail.com";
+const A2Z_PASSWORD = "YOUR_A2Z_PASSWORD"; // මෙතනට ඔබේ A2Z Password එක ඇතුළත් කරන්න
 
-        .form-group { margin-bottom: 12px; }
-        label { display: block; font-size: 13px; font-weight: 600; color: #333; margin-bottom: 4px; }
-        input { width: 100%; padding: 11px; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; font-size: 14px; }
-        input:focus { border-color: #27ae60; outline: none; }
-        
-        .btn-submit { width: 100%; background: #27ae60; color: #fff; padding: 14px; border: none; border-radius: 6px; font-size: 18px; font-weight: bold; cursor: pointer; transition: 0.3s; margin-top: 10px; }
-        .btn-submit:hover { background: #219150; }
-        #msg { text-align: center; margin-top: 15px; font-weight: bold; }
-    </style>
-</head>
-<body>
-
-<div class="container">
-    <div style="text-align: center;"><span class="badge">🔥 Limited Time Offer - 35% OFF</span></div>
+function doPost(e) {
+  try {
+    var sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
+    var data = JSON.parse(e.postData.contents);
     
-    <!-- Product Image (ඔබේ Image Link එක මෙතනට දාන්න) -->
-    <img src="https://images.unsplash.com/photo-1585338107529-13afc5f02586?w=500" alt="Product Image" class="product-img">
+    // 1. Google Sheet එකට Data ඇතුළත් කිරීම (Status එක "Pending" ලෙස වැටේ)
+    sheet.appendRow([
+      new Date(),
+      data.customerName,
+      data.address,
+      data.city,
+      data.district || '',
+      data.phone1,
+      data.phone2 || '',
+      data.productName,
+      data.qty || 1,
+      data.saleAmount,
+      "Pending"
+    ]);
+
+    // 2. A2Z Portal එකට Order එක Auto-Submit කිරීම
+    var a2zResponse = sendOrderToA2Z(data);
+
+    return ContentService.createTextOutput(JSON.stringify({"result": "success", "a2z": a2zResponse}))
+      .setMimeType(ContentService.mimeType.JSON);
+      
+  } catch (err) {
+    return ContentService.createTextOutput(JSON.stringify({"result": "error", "message": err.toString()}))
+      .setMimeType(ContentService.mimeType.JSON);
+  }
+}
+
+function sendOrderToA2Z(orderData) {
+  try {
+    // Step 1: A2Z එකට Login වී Session Cookie එක ලබාගැනීම
+    var loginUrl = "https://a2ztraders.lk/index.php/Dash";
     
-    <div class="title">Mini Portable Rechargeable Fan</div>
+    var loginPayload = {
+      "email": A2Z_EMAIL,
+      "password": A2Z_PASSWORD
+    };
+
+    var loginOptions = {
+      "method": "post",
+      "payload": loginPayload,
+      "followRedirects": true
+    };
+
+    var loginResponse = UrlFetchApp.fetch(loginUrl, loginOptions);
+    var headers = loginResponse.getAllHeaders();
+    var cookie = headers['Set-Cookie'];
+
+    // Step 2: Customer Shipping Details A2Z Portal එකට Submit කිරීම
+    var orderUrl = "https://a2ztraders.lk/Customer"; 
     
-    <div class="price-tag">
-        <span class="old-price">Rs. 3,500</span>
-        <span class="new-price">Rs. 2,850</span>
-    </div>
+    var orderPayload = {
+      "c_name": orderData.customerName,
+      "address": orderData.address,
+      "city": orderData.city,
+      "district": orderData.district || "",
+      "phone_one": orderData.phone1,
+      "phone_two": orderData.phone2 || "",
+      "due_date": "2026-08-23",
+      "pay_method": "COD",
+      "product_name": orderData.productName,
+      "qty": orderData.qty || 1,
+      "sale_price": orderData.saleAmount,
+      "fb_page": "Thameera",
+      "pkg_weight": "1",
+      "mark_wb": "1"
+    };
 
-    <div class="features">
-        <ul>
-            <li>High-Speed Cooling Wind ⚡</li>
-            <li>Rechargeable Battery (3-5 Hours Backup) 🔋</li>
-            <li>Compact & Lightweight (Portable) 🎒</li>
-            <li>Free Islandwide Delivery Available 🚚</li>
-        </ul>
-    </div>
+    var orderOptions = {
+      "method": "post",
+      "headers": {
+        "Cookie": cookie
+      },
+      "payload": orderPayload,
+      "followRedirects": true
+    };
 
-    <!-- Order Form -->
-    <form id="orderForm">
-        <div class="form-group">
-            <label>ඔබේ නම (Name) *</label>
-            <input type="text" name="customerName" placeholder="Full Name" required>
-        </div>
-
-        <div class="form-group">
-            <label>ලිපිනය (Address) *</label>
-            <input type="text" name="address" placeholder="House No, Street Name" required>
-        </div>
-
-        <div class="form-group">
-            <label>නගරය (City) *</label>
-            <input type="text" name="city" placeholder="City" required>
-        </div>
-
-        <div class="form-group">
-            <label>දුරකථන අංකය (Phone Number) *</label>
-            <input type="tel" name="phone1" placeholder="07XXXXXXXX" required>
-        </div>
-
-        <div class="form-group">
-            <label>දෙවන දුරකථන අංකය (Optional)</label>
-            <input type="tel" name="phone2" placeholder="07XXXXXXXX">
-        </div>
-
-        <!-- Hidden Product Data -->
-        <input type="hidden" name="productName" value="Mini Portable Fan">
-        <input type="hidden" name="qty" value="1">
-        <input type="hidden" name="saleAmount" value="2850">
-
-        <button type="submit" class="btn-submit" id="submitBtn">BUY NOW - Rs. 2,850 (COD)</button>
-    </form>
+    var orderSubmit = UrlFetchApp.fetch(orderUrl, orderOptions);
     
-    <div id="msg"></div>
-</div>
+    if (orderSubmit.getResponseCode() == 200) {
+      return "Successfully Pushed to A2Z";
+    } else {
+      return "Failed to Push to A2Z";
+    }
 
-<script>
-    const scriptURL = 'https://script.google.com/macros/s/AKfycbyVnuI1o4galwTSdetYBlgXsIjztQs_XakqQrWtcZuIx-no2ypUSwELhTLVbuNrOAkf/exec';
-    const form = document.getElementById('orderForm');
-    const msg = document.getElementById('msg');
-    const submitBtn = document.getElementById('submitBtn');
-
-    form.addEventListener('submit', e => {
-        e.preventDefault();
-        submitBtn.disabled = true;
-        submitBtn.innerText = 'Processing Order...';
-        msg.style.color = 'black';
-        msg.innerText = 'ඔබේ Order එක යවමින් පවතී...';
-
-        const formData = new FormData(form);
-        const data = Object.fromEntries(formData.entries());
-
-        fetch(scriptURL, {
-            method: 'POST',
-            mode: 'no-cors',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(data)
-        })
-        .then(() => {
-            msg.style.color = 'green';
-            msg.innerText = 'SUCCESS! ඔබේ Order එක භාරගන්නා ලදී. ඉක්මනින්ම ඔබට කතා කරන්නෙමු.';
-            form.reset();
-            submitBtn.disabled = false;
-            submitBtn.innerText = 'BUY NOW - Rs. 2,850 (COD)';
-        })
-        .catch(error => {
-            msg.style.color = 'red';
-            msg.innerText = 'Error! නැවත උත්සාහ කරන්න.';
-            submitBtn.disabled = false;
-            submitBtn.innerText = 'BUY NOW - Rs. 2,850 (COD)';
-        });
-    });
-</script>
-
-</body>
-</html>
+  } catch (e) {
+    return "A2Z Error: " + e.toString();
+  }
+}
