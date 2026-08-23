@@ -1,198 +1,97 @@
-<!DOCTYPE html>
-<html lang="si">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Online Store</title>
-    <style>
-        * { box-sizing: border-box; }
-        body { font-family: 'Segoe UI', Arial, sans-serif; background-color: #f8f9fa; margin: 0; padding: 20px; }
-        header { text-align: center; margin-bottom: 30px; }
-        h1 { color: #2c3e50; margin-bottom: 5px; }
+const puppeteer = require('puppeteer');
+const { GoogleSpreadsheet } = require('google-spreadsheet');
+const { JWT } = require('google-auth-library');
 
-        .products-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 20px; max-width: 1100px; margin: 0 auto; }
-        .product-card { background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.1); display: flex; flex-direction: column; justify-content: space-between; padding: 15px; }
-        .product-card img { width: 100%; height: 200px; object-fit: cover; border-radius: 6px; background-color: #eee; }
-        .product-title { font-size: 18px; font-weight: bold; margin: 10px 0 5px 0; color: #333; }
-        .product-price { font-size: 16px; color: #e74c3c; font-weight: bold; margin-bottom: 10px; }
-        .product-desc { font-size: 13px; color: #666; margin-bottom: 15px; flex-grow: 1; }
-        
-        .buy-btn { background: #27ae60; color: white; border: none; padding: 10px; width: 100%; border-radius: 4px; font-weight: bold; cursor: pointer; font-size: 14px; }
-        .buy-btn:hover { background: #219150; }
+(async () => {
+  console.log("🚀 Starting A2Z Automation Bot...");
 
-        /* Modal */
-        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); justify-content: center; align-items: center; padding: 15px; z-index: 1000; }
-        .modal-content { background: white; padding: 25px; border-radius: 8px; max-width: 450px; width: 100%; position: relative; }
-        .close-btn { position: absolute; top: 10px; right: 15px; font-size: 22px; cursor: pointer; color: #777; }
-        .form-group { margin-bottom: 12px; }
-        .form-group label { display: block; font-size: 12px; font-weight: bold; margin-bottom: 4px; }
-        .form-group input { width: 100%; padding: 9px; border: 1px solid #ccc; border-radius: 4px; }
-        .submit-btn { background: #2980b9; color: white; border: none; padding: 12px; width: 100%; font-size: 15px; font-weight: bold; border-radius: 4px; cursor: pointer; margin-top: 10px; }
-        .submit-btn:disabled { background: #bdc3c7; }
+  const creds = JSON.parse(process.env.GOOGLE_CREDENTIALS);
+  const auth = new JWT({
+    email: creds.client_email,
+    key: creds.private_key,
+    scopes: ['https://www.googleapis.com/auth/spreadsheets'],
+  });
 
-        #loading { text-align: center; font-size: 18px; color: #555; padding: 40px; }
-        #order-status { text-align: center; font-weight: bold; margin-top: 10px; }
-    </style>
-</head>
-<body>
+  const doc = new GoogleSpreadsheet(process.env.SHEET_ID, auth);
+  await doc.loadInfo();
+  const sheet = doc.sheetsByIndex[0];
+  const rows = await sheet.getRows();
 
-<header>
-    <h1>🛒 Our Online Store</h1>
-    <p>Select a product to purchase</p>
-</header>
+  // Status එක Empty හෝ 'Pending' වන Rows පමණක් තෝරා ගැනීම
+  const pendingRows = rows.filter(row => {
+    const status = row.get('Status') || row.get('Order Status') || '';
+    return !status.includes('Successfully') && !status.includes('Success') && !status.includes('Added');
+  });
 
-<div id="loading">Loading products...</div>
-<div class="products-grid" id="productsContainer"></div>
+  if (pendingRows.length === 0) {
+    console.log("✅ No pending orders to process. Exiting...");
+    return;
+  }
 
-<!-- Order Modal Form -->
-<div class="modal" id="orderModal">
-    <div class="modal-content">
-        <span class="close-btn" onclick="closeModal()">&times;</span>
-        <h3 style="margin-top:0;">📦 Place Your Order</h3>
-        <p id="selectedProductTitle" style="font-weight:bold; color:#2c3e50; margin-bottom:15px;"></p>
-        
-        <form id="orderForm">
-            <input type="hidden" id="productId">
-            <input type="hidden" id="productName">
-            <input type="hidden" id="productPrice">
+  console.log(`📦 Found ${pendingRows.length} pending orders. Launching Browser...`);
 
-            <div class="form-group">
-                <label>Your Name</label>
-                <input type="text" id="custName" required placeholder="Full Name">
-            </div>
-            <div class="form-group">
-                <label>Delivery Address</label>
-                <input type="text" id="custAddress" required placeholder="Street Address">
-            </div>
-            <div class="form-group">
-                <label>City</label>
-                <input type="text" id="custCity" required placeholder="City">
-            </div>
-            <div class="form-group">
-                <label>District</label>
-                <input type="text" id="custDistrict" required placeholder="District">
-            </div>
-            <div class="form-group">
-                <label>Phone Number 1</label>
-                <input type="tel" id="custPhone" required placeholder="07XXXXXXXX">
-            </div>
-            <div class="form-group">
-                <label>Phone Number 2 (Optional)</label>
-                <input type="tel" id="custPhone2" placeholder="07XXXXXXXX">
-            </div>
+  const browser = await puppeteer.launch({
+    headless: "new",
+    args: ['--no-sandbox', '--disable-setuid-sandbox']
+  });
 
-            <button type="submit" class="submit-btn" id="orderSubmitBtn">Confirm Order</button>
-        </form>
-        <div id="order-status"></div>
-    </div>
-</div>
+  const page = await browser.newPage();
 
-<script>
-    // Products Fetch Script URL
-    const PRODUCT_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzlo2ie_kPErggg1boh4JpWYA11sun464xVVw3BcKntEGqWiEul9J5NiD00EwWc3zB_/exec';
+  try {
+    console.log("🔑 Logging into A2Z Account...");
+    await page.goto('https://a2ztraders.lk/dash', { waitUntil: 'networkidle2' });
+
+    await page.type('input[name="email"]', process.env.A2Z_EMAIL);
+    await page.type('input[name="password"]', process.env.A2Z_PASSWORD);
     
-    // ඔබගේ නව Orders Script Web App URL එක
-    const ORDERS_SCRIPT_URL  = 'https://script.google.com/macros/s/AKfycbykNmYoemUDjODh5Bqx8NahjyagyIxWLXgVrXBhkzckpfXTbs3qAAnLAgHlS3f2dj5R/exec';
+    await Promise.all([
+      page.click('button[type="submit"]'),
+      page.waitForNavigation({ waitUntil: 'networkidle2' })
+    ]);
 
-    function loadProducts() {
-        const container = document.getElementById('productsContainer');
-        const loading = document.getElementById('loading');
+    console.log("✅ Logged in successfully!");
 
-        fetch(`${PRODUCT_SCRIPT_URL}?action=getProducts`)
-            .then(res => res.json())
-            .then(data => {
-                loading.style.display = 'none';
-                container.innerHTML = '';
+    for (let row of pendingRows) {
+      console.log(`⏳ Processing order for: ${row.get('Name') || row.get('B')}`);
+      
+      await page.goto('https://a2ztraders.lk/Customer', { waitUntil: 'networkidle2' });
+      await page.waitForSelector('input[name="cust_name"]', { visible: true });
 
-                if (!data || data.length === 0) {
-                    container.innerHTML = '<p style="grid-column: 1/-1; text-align:center;">තාම Products ඇතුළත් කර නැත.</p>';
-                    return;
-                }
+      // Clean Data Extraction
+      const name = row.get('Name') || row.get('B') || '';
+      const address = row.get('Address') || row.get('C') || '';
+      const city = row.get('City') || row.get('D') || '';
+      const phone = row.get('Phone') || row.get('F') || '';
+      const phone2 = row.get('Phone2') || row.get('G') || '';
 
-                data.forEach(item => {
-                    const card = document.createElement('div');
-                    card.className = 'product-card';
-                    
-                    const pId = item.id || item.ID || '';
-                    const imgUrl = item.image || item.img || 'https://via.placeholder.com/200';
-                    const name = item.name || 'Unnamed Product';
-                    const price = item.price || '0';
-                    const desc = item.description || item.desc || '';
+      if (!name || !phone) {
+        console.log("⚠️ Skipping row: Missing Name or Phone number.");
+        continue;
+      }
 
-                    card.innerHTML = `
-                        <img src="${imgUrl}" alt="${name}" onerror="this.src='https://via.placeholder.com/200'">
-                        <div class="product-title">${name}</div>
-                        <div class="product-price">Rs. ${price}</div>
-                        <div class="product-desc">${desc}</div>
-                        <button class="buy-btn" onclick="openOrderModal('${pId}', '${name}', '${price}')">Buy Now</button>
-                    `;
-                    container.appendChild(card);
-                });
-            })
-            .catch(err => {
-                console.error(err);
-                loading.innerText = 'Failed to load products.';
-            });
+      await page.type('input[name="cust_name"]', name);
+      await page.type('textarea[name="address"]', address);
+      await page.type('input[name="city"]', city);
+      await page.type('input[name="contact_1"]', phone);
+      
+      if (phone2) {
+        await page.type('input[name="contact_2"]', phone2);
+      }
+
+      // Submit Form
+      await page.click('button[type="submit"]');
+      await page.waitForTimeout(3000); // Form එක Save වීමට කාලය ලබා දීම
+
+      // Sheet එක Update කිරීම
+      row.set('Status', 'Order Placed Successfully');
+      await row.save();
+      console.log(`✅ Order for ${name} submitted and updated in Sheet!`);
     }
 
-    function openOrderModal(id, name, price) {
-        document.getElementById('productId').value = id;
-        document.getElementById('productName').value = name;
-        document.getElementById('productPrice').value = price;
-        document.getElementById('selectedProductTitle').innerText = `${name} - Rs. ${price}`;
-        document.getElementById('orderModal').style.display = 'flex';
-        document.getElementById('order-status').innerText = '';
-    }
-
-    function closeModal() {
-        document.getElementById('orderModal').style.display = 'none';
-    }
-
-    document.getElementById('orderForm').addEventListener('submit', e => {
-        e.preventDefault();
-        const btn = document.getElementById('orderSubmitBtn');
-        const status = document.getElementById('order-status');
-
-        btn.disabled = true;
-        status.style.color = '#333';
-        status.innerText = 'Placing order...';
-
-        const payload = {
-            action: 'addOrder',
-            productId: document.getElementById('productId').value,
-            product: document.getElementById('productName').value,
-            price: document.getElementById('productPrice').value,
-            name: document.getElementById('custName').value,
-            address: document.getElementById('custAddress').value,
-            city: document.getElementById('custCity').value,
-            district: document.getElementById('custDistrict').value,
-            phone: document.getElementById('custPhone').value,
-            phone2: document.getElementById('custPhone2').value
-        };
-
-        fetch(ORDERS_SCRIPT_URL, {
-            method: 'POST',
-            mode: 'no-cors',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
-        })
-        .then(() => {
-            status.style.color = 'green';
-            status.innerText = 'Order Placed Successfully!';
-            e.target.reset();
-            btn.disabled = false;
-            setTimeout(closeModal, 2000);
-        })
-        .catch(err => {
-            console.error(err);
-            status.style.color = 'red';
-            status.innerText = 'Error placing order.';
-            btn.disabled = false;
-        });
-    });
-
-    loadProducts();
-</script>
-
-</body>
-</html>
+  } catch (err) {
+    console.error("❌ Error during execution:", err.message);
+  } finally {
+    await browser.close();
+    console.log("🔒 Browser closed.");
+  }
+})();
