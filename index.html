@@ -52,7 +52,6 @@
         <p id="selectedProductTitle" style="font-weight:bold; color:#2c3e50; margin-bottom:15px;"></p>
         
         <form id="orderForm">
-            <!-- Customer ට නොපෙනෙන Hidden Inputs -->
             <input type="hidden" id="productId">
             <input type="hidden" id="productName">
             <input type="hidden" id="productPrice">
@@ -89,10 +88,11 @@
 </div>
 
 <script>
+    // Products Fetch Script URL
     const PRODUCT_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzlo2ie_kPErggg1boh4JpWYA11sun464xVVw3BcKntEGqWiEul9J5NiD00EwWc3zB_/exec';
     
-    // ඔබ ලබාදුන් අලුත් Order Script URL එක
-    const ORDERS_SCRIPT_URL  = 'https://script.google.com/macros/s/AKfycbxOvIObMv6n89Bjk0oIdLoZntv1AKoxYHmCLqGaItU0-07RgWwsBuel5xWIK57gztws/exec';
+    // ඔබගේ නව Orders Script Web App URL එක
+    const ORDERS_SCRIPT_URL  = 'https://script.google.com/macros/s/AKfycbxIaShEfWgFzSU0YgN3XN8wGXc7MjgqzPYZZ8hT85HlcZo0wbBqa9RCc9oda4YEGiRe/exec';
 
     function loadProducts() {
         const container = document.getElementById('productsContainer');
