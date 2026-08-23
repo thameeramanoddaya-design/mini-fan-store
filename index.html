@@ -3,34 +3,69 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mini Online Store</title>
+    <title>Online Store</title>
     <style>
         * { box-sizing: border-box; }
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f8f9fa; margin: 0; padding: 20px; }
+        body { font-family: 'Segoe UI', Arial, sans-serif; background-color: #f8f9fa; margin: 0; padding: 20px; }
         header { text-align: center; margin-bottom: 30px; }
         h1 { color: #2c3e50; margin-bottom: 5px; }
-        
-        /* Products Grid Style */
-        .products-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 20px; max-width: 1100px; margin: 0 auto; }
-        .product-card { background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.1); display: flex; flex-direction: column; justify-content: space-between; padding: 15px; }
-        .product-card img { width: 100%; height: 200px; object-fit: cover; border-radius: 6px; }
+
+        .products-grid { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); 
+            gap: 20px; 
+            max-width: 1100px; 
+            margin: 0 auto; 
+        }
+
+        .product-card { 
+            background: white; 
+            border-radius: 8px; 
+            overflow: hidden; 
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1); 
+            display: flex; 
+            flex-direction: column; 
+            justify-content: space-between; 
+            padding: 15px; 
+        }
+
+        .product-card img { 
+            width: 100%; 
+            height: 200px; 
+            object-fit: cover; 
+            border-radius: 6px; 
+            background-color: #eee;
+        }
+
         .product-title { font-size: 18px; font-weight: bold; margin: 10px 0 5px 0; color: #333; }
         .product-price { font-size: 16px; color: #e74c3c; font-weight: bold; margin-bottom: 10px; }
         .product-desc { font-size: 13px; color: #666; margin-bottom: 15px; flex-grow: 1; }
-        .buy-btn { background: #27ae60; color: white; border: none; padding: 10px; width: 100%; border-radius: 4px; font-weight: bold; cursor: pointer; font-size: 14px; }
+        
+        .buy-btn { 
+            background: #27ae60; 
+            color: white; 
+            border: none; 
+            padding: 10px; 
+            width: 100%; 
+            border-radius: 4px; 
+            font-weight: bold; 
+            cursor: pointer; 
+            font-size: 14px; 
+        }
         .buy-btn:hover { background: #219150; }
 
-        /* Order Modal Form Style */
+        /* Order Popup Modal */
         .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); justify-content: center; align-items: center; padding: 15px; z-index: 1000; }
         .modal-content { background: white; padding: 25px; border-radius: 8px; max-width: 450px; width: 100%; position: relative; }
         .close-btn { position: absolute; top: 10px; right: 15px; font-size: 22px; cursor: pointer; color: #777; }
         .form-group { margin-bottom: 12px; }
         .form-group label { display: block; font-size: 12px; font-weight: bold; margin-bottom: 4px; }
-        .form-group input, .form-group select { width: 100%; padding: 9px; border: 1px solid #ccc; border-radius: 4px; }
+        .form-group input { width: 100%; padding: 9px; border: 1px solid #ccc; border-radius: 4px; }
         .submit-btn { background: #2980b9; color: white; border: none; padding: 12px; width: 100%; font-size: 15px; font-weight: bold; border-radius: 4px; cursor: pointer; margin-top: 10px; }
         .submit-btn:disabled { background: #bdc3c7; }
-        
-        #loading { text-align: center; font-size: 18px; color: #555; width: 100%; padding: 40px; }
+
+        #loading { text-align: center; font-size: 18px; color: #555; padding: 40px; }
+        #error-msg { text-align: center; color: #d9534f; font-weight: bold; padding: 20px; display: none; }
         #order-status { text-align: center; font-weight: bold; margin-top: 10px; }
     </style>
 </head>
@@ -38,16 +73,15 @@
 
 <header>
     <h1>🛒 Our Online Store</h1>
-    <p>Select a product and place your order easily!</p>
+    <p>Select a product to purchase</p>
 </header>
 
-<!-- Loading Text -->
 <div id="loading">Loading products...</div>
+<div id="error-msg"></div>
 
-<!-- Products Display Area -->
 <div class="products-grid" id="productsContainer"></div>
 
-<!-- Order Modal Popup -->
+<!-- Order Modal Form -->
 <div class="modal" id="orderModal">
     <div class="modal-content">
         <span class="close-btn" onclick="closeModal()">&times;</span>
@@ -90,44 +124,60 @@
 </div>
 
 <script>
-    // ⚠️ ඔබේ APPS SCRIPT WEB APP URLS දෙක මෙතැනට දෙන්න
-    const PRODUCT_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyVnuI1o4galwTSdetYBlgXsIjztQs_XakqQrWtcZuIx-no2ypUSwELhTLVbuNrOAkf/exec';
-    const ORDERS_SCRIPT_URL  = 'https://script.google.com/macros/s/AKfycbzlo2ie_kPErggg1boh4JpWYA11sun464xVVw3BcKntEGqWiEul9J5NiD00EwWc3zB_/exec';
+    // Web App URLs
+    const PRODUCT_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzlo2ie_kPErggg1boh4JpWYA11sun464xVVw3BcKntEGqWiEul9J5NiD00EwWc3zB_/exec';
+    const ORDERS_SCRIPT_URL  = 'https://script.google.com/macros/s/AKfycbyVnuI1o4galwTSdetYBlgXsIjztQs_XakqQrWtcZuIx-no2ypUSwELhTLVbuNrOAkf/exec';
 
     // 1. Products Load කර ගැනීම
     function loadProducts() {
+        const container = document.getElementById('productsContainer');
+        const loading = document.getElementById('loading');
+        const errorMsg = document.getElementById('error-msg');
+
         fetch(`${PRODUCT_SCRIPT_URL}?action=getProducts`)
-            .then(res => res.json())
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            })
             .then(data => {
-                document.getElementById('loading').style.display = 'none';
-                const container = document.getElementById('productsContainer');
+                loading.style.display = 'none';
                 container.innerHTML = '';
 
-                if (data.length === 0) {
-                    container.innerHTML = '<p style="grid-column: 1/-1; text-align:center;">No products available right now.</p>';
+                if (!data || data.length === 0) {
+                    container.innerHTML = '<p style="grid-column: 1/-1; text-align:center;">තාම Products ඇතුළත් කර නැත.</p>';
                     return;
                 }
 
                 data.forEach(item => {
                     const card = document.createElement('div');
                     card.className = 'product-card';
+                    
+                    const imgUrl = item.image || item.img || 'https://via.placeholder.com/200?text=No+Image';
+                    const name = item.name || 'Unnamed Product';
+                    const price = item.price || '0';
+                    const desc = item.description || item.desc || '';
+
                     card.innerHTML = `
-                        <img src="${item.image || item.img || 'https://via.placeholder.com/200'}" alt="${item.name}">
-                        <div class="product-title">${item.name}</div>
-                        <div class="product-price">Rs. ${item.price}</div>
-                        <div class="product-desc">${item.description || item.desc || ''}</div>
-                        <button class="buy-btn" onclick="openOrderModal('${item.name}', '${item.price}')">Buy Now</button>
+                        <img src="${imgUrl}" alt="${name}" onerror="this.src='https://via.placeholder.com/200?text=Image+Error'">
+                        <div class="product-title">${name}</div>
+                        <div class="product-price">Rs. ${price}</div>
+                        <div class="product-desc">${desc}</div>
+                        <button class="buy-btn" onclick="openOrderModal('${name}', '${price}')">Buy Now</button>
                     `;
                     container.appendChild(card);
                 });
             })
             .catch(err => {
-                console.error(err);
-                document.getElementById('loading').innerText = 'Failed to load products. Check script URL.';
+                console.error('Fetch error:', err);
+                loading.style.display = 'none';
+                errorMsg.style.display = 'block';
+                errorMsg.innerText = 'Products Load කර ගැනීමට නොහැකි විය. Apps Script එකේ "Who has access" එක "Anyone" ලෙස New Version එකකින් Deploy කර ඇත්දැයි බලන්න.';
             });
     }
 
-    // 2. Order Modal එක Open කිරීම
+    // 2. Order Form Open/Close
     function openOrderModal(name, price) {
         document.getElementById('selectedProductTitle').innerText = `${name} - Rs. ${price}`;
         document.getElementById('productName').value = name;
@@ -140,7 +190,7 @@
         document.getElementById('orderModal').style.display = 'none';
     }
 
-    // 3. Customer Order එක Submit කිරීම (Orders Sheet එකට යැවීම)
+    // 3. Customer Order Submit කිරීම
     document.getElementById('orderForm').addEventListener('submit', e => {
         e.preventDefault();
         const btn = document.getElementById('orderSubmitBtn');
@@ -170,19 +220,20 @@
         })
         .then(() => {
             status.style.color = 'green';
-            status.innerText = 'Order Placed Successfully! Thank you.';
+            status.innerText = 'Order Placed Successfully!';
             e.target.reset();
             btn.disabled = false;
-            setTimeout(closeModal, 2500);
+            setTimeout(closeModal, 2000);
         })
-        .catch(() => {
+        .catch(err => {
+            console.error(err);
             status.style.color = 'red';
             status.innerText = 'Error placing order. Try again.';
             btn.disabled = false;
         });
     });
 
-    // Page එක Load වෙද්දීම Products ගන්න
+    // Page එක Load වන විට
     loadProducts();
 </script>
 
